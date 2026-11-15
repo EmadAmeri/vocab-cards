@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cut">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0f1420">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Vocab Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--card:#fff;--back:#9b6ce0;--text:#1d2330;--muted:#8a91a0;--line:#e4e7ec;--done:#3bb273;--part:#cdeedc;--accent:#7c4dd6}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1420;--panel:#151b29;--card:#1c2333;--back:#8a5bd6;--text:#e8ebf2;--muted:#7d8597;--line:#262e40;--done:#2f9e63;--part:#1f3d2e;--accent:#a07ef0}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Vazirmatn,system-ui,sans-serif}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.hidden{display:none!important}
+/* login */
+#login{min-height:100vh;display:grid;place-items:center;padding:16px}
+#login form{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;display:grid;gap:12px}
+#login input{padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;direction:ltr}
+#login button{padding:12px;border-radius:10px;background:var(--accent);color:#fff;font-weight:600}
+#login .err{color:#e05555;font-size:14px;min-height:1em}
+/* layout */
+#app{display:flex;min-height:100vh}
+nav{width:84px;flex:none;background:var(--panel);border-inline-start:1px solid var(--line);position:sticky;top:0;height:100vh;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:8px}
+nav button{height:40px;border-radius:10px;border:1px solid var(--line);font-family:Inter,sans-serif;font-weight:600;font-size:15px;flex:none}
+nav button.part{background:var(--part)}
+nav button.done{background:var(--done);color:#fff;border-color:transparent}
+nav button.active{outline:2px solid var(--accent);outline-offset:1px}
+nav .all{font-family:Vazirmatn;font-size:13px}
+main{flex:1;min-width:0;padding:16px 20px 40px}
+header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+header h1{font-size:18px;margin:0 0 0 auto;font-weight:600}
+.filters{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px}
+.filters button{padding:6px 12px;border-radius:8px;font-size:14px;color:var(--muted)}
+.filters button.on{background:var(--bg);color:var(--text)}
+.sync{font-size:12px;color:var(--muted);width:100%}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.item{display:flex;flex-direction:column;gap:6px}
+.card{perspective:900px;height:130px}
+.inner{position:relative;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
+.card.flip .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;display:grid;place-items:center;text-align:center;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.front{background:var(--card);border:1px solid var(--line);direction:ltr;font-family:Inter,sans-serif;font-size:17px;font-weight:500}
+.back{background:var(--back);color:#fff;transform:rotateY(180deg);font-size:14px;line-height:1.7;overflow:auto}
+.rate{display:flex;justify-content:center;gap:10px}
+.rate button{font-size:20px;padding:2px 10px;border-radius:10px;opacity:.3;filter:grayscale(1);transition:.15s}
+.rate button.sel{opacity:1;filter:none;background:var(--panel);border:1px solid var(--line)}
+.empty{color:var(--muted);text-align:center;padding:60px 0}
+@media (max-width:700px){
+ #app{flex-direction:column}
+ nav{width:100%;height:auto;position:sticky;top:0;z-index:5;flex-direction:row;overflow-x:auto;border:0;border-bottom:1px solid var(--line);padding:10px 16px}
+ nav button{min-width:44px;padding:0 10px}
+ main{padding:14px 16px 40px}
+ .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+ .card{height:120px}
+ .front{font-size:15px}.back{font-size:13px}
+}
+</style>
+</head>
+<body>
+<div id="login" class="hidden">
+ <form id="loginForm">
+  <div style="font-weight:600">ورود</div>
+  <input id="token" type="password" placeholder="کد ورود (GitHub token)" autocomplete="current-password" required>
+  <button>ورود</button>
+  <div class="err" id="loginErr"></div>
+ </form>
+</div>
+
+<div id="app" class="hidden">
+ <nav id="groups"></nav>
+ <main>
+  <header>
+   <h1 id="title"></h1>
+   <div class="filters" id="filters">
+    <button data-f="all" class="on">همه</button>
+    <button data-f="none">جدید</button>
+    <button data-f="up">👍</button>
+    <button data-f="down">👎</button>
+   </div>
+   <div class="sync" id="sync"></div>
+  </header>
+  <div class="grid" id="grid"></div>
+ </main>
+</div>
+
+<script>
+const OWNER = "EmadAmeri", REPO = "vocab-data", SIZE = 20;
+const API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/`;
+const $ = s => document.querySelector(s);
+const ls = { get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{localStorage.setItem(k,v)}catch{}}, del(k){try{localStorage.removeItem(k)}catch{}} };
+
+let token = ls.get("vc_token");
+let words = [], ratings = {}, progressSha = null;
+let state = { group: Number(ls.get("vc_group")) || 1, filter: "all" };
+const audioCache = new Map();
+let player = new Audio();
+
+async function gh(path, opts = {}, raw = false) {
+  const r = await fetch(API + path + (raw ? "" : ""), { ...opts, cache: "no-store", headers: {
+    Authorization: `Bearer ${token}`, Accept: raw ? "application/vnd.github.raw+json" : "application/vnd.github+json", ...(opts.headers||{}) }});
+  return r;
+}
+
+function b64(str){ return btoa(unescape(encodeURIComponent(str))); }
+function unb64(s){ return decodeURIComponent(escape(atob(s.replace(/\n/g,"")))); }
+
+async function loadAll() {
+  const r = await gh("words.json", {}, true);
+  if (r.status === 401 || r.status === 403 || r.status === 404) throw new Error("auth");
+  words = await r.json();
+  const p = await gh("progress.json");
+  if (p.ok) { const j = await p.json(); progressSha = j.sha; ratings = JSON.parse(unb64(j.content)).ratings || {}; }
+  const local = JSON.parse(ls.get("vc_pending") || "null");
+  if (local) { pending = local; ratings = applyPending(ratings, local); queueSave(); }
+}
+function applyPending(base, p){ const r = { ...base }; for (const k in p) { if (p[k]) r[k] = p[k]; else delete r[k]; } return r; }
+
+let saveTimer = null, pending = {};
+function queueSave(){ clearTimeout(saveTimer); setSync("در حال ذخیره…"); saveTimer = setTimeout(save, 1200); }
+async function save(attempt = 0) {
+  ls.set("vc_pending", JSON.stringify(pending));
+  const body = JSON.stringify({ ratings, updated: new Date().toISOString() }, null, 1);
+  const r = await gh("progress.json", { method: "PUT", body: JSON.stringify({ message: "progress", content: b64(body), sha: progressSha || undefined }) }).catch(()=>null);
+  if (r && r.ok) { progressSha = (await r.json()).content.sha; pending = {}; ls.del("vc_pending"); setSync("ذخیره شد ✓"); return; }
+  if (r && (r.status === 409 || r.status === 422) && attempt < 3) {
+    const p = await gh("progress.json");
+    if (p.ok) { const j = await p.json(); progressSha = j.sha; ratings = applyPending(JSON.parse(unb64(j.content)).ratings || {}, pending); }
+    return save(attempt + 1);
+  }
+  setSync("آفلاین — بعداً ذخیره می‌شود"); saveTimer = setTimeout(save, 15000);
+}
+function setSync(t){ $("#sync").textContent = t; }
+
+async function audioUrl(w) {
+  if (audioCache.has(w.id)) return audioCache.get(w.id);
+  const pr = gh(w.audio, {}, true).then(r => r.ok ? r.blob() : null).then(b => b && URL.createObjectURL(b));
+  audioCache.set(w.id, pr); return pr;
+}
+async function play(w){ const u = await audioUrl(w); if (!u) return; player.pause(); player = new Audio(u); player.play().catch(()=>{}); }
+
+const groupCount = () => Math.ceil(words.length / SIZE);
+const groupWords = g => g === 0 ? words : words.slice((g-1)*SIZE, g*SIZE);
+
+function renderNav() {
+  const nav = $("#groups"); nav.innerHTML = "";
+  const all = document.createElement("button"); all.textContent = "همه"; all.className = "all" + (state.group === 0 ? " active" : "");
+  all.onclick = () => go(0); nav.append(all);
+  for (let g = 1; g <= groupCount(); g++) {
+    const ws = groupWords(g), n = ws.filter(w => ratings[w.id]).length;
+    const b = document.createElement("button"); b.textContent = g;
+    b.className = (n === ws.length ? "done" : n ? "part" : "") + (g === state.group ? " active" : "");
+    b.title = `${n}/${ws.length}`; b.onclick = () => go(g); nav.append(b);
+  }
+}
+function go(g){ state.group = g; ls.set("vc_group", g); render(); window.scrollTo(0,0); }
+
+function render() {
+  if (state.group > groupCount()) state.group = 1;
+  renderNav();
+  const list = groupWords(state.group).filter(w => state.filter === "all" || (state.filter === "none" ? !ratings[w.id] : ratings[w.id] === state.filter));
+  $("#title").textContent = state.group ? `گروه ${state.group}` : "همه کلمات";
+  const grid = $("#grid"); grid.innerHTML = "";
+  if (!list.length) { grid.innerHTML = `<div class="empty" style="grid-column:1/-1">کارتی نیست</div>`; return; }
+  for (const w of list) {
+    const el = document.createElement("div"); el.className = "item";
+    el.innerHTML = `<div class="card"><div class="inner"><div class="face front"></div><div class="face back"></div></div></div>
+      <div class="rate"><button data-r="up" aria-label="بلدم">👍</button><button data-r="down" aria-label="بلد نیستم">👎</button></div>`;
+    el.querySelector(".front").textContent = w.en;
+    el.querySelector(".back").textContent = w.fa;
+    const card = el.querySelector(".card");
+    card.onclick = () => { card.classList.toggle("flip"); play(w); };
+    card.onmouseenter = () => audioUrl(w);
+    el.querySelectorAll(".rate button").forEach(b => {
+      b.classList.toggle("sel", ratings[w.id] === b.dataset.r);
+      b.onclick = () => {
+        const v = ratings[w.id] === b.dataset.r ? undefined : b.dataset.r;
+        if (v) ratings[w.id] = v; else delete ratings[w.id];
+        pending[w.id] = v || null;
+        el.querySelectorAll(".rate button").forEach(x => x.classList.toggle("sel", ratings[w.id] === x.dataset.r));
+        renderNav(); queueSave();
+      };
+    });
+    grid.append(el);
+  }
+}
+
+$("#filters").onclick = e => { const b = e.target.closest("button"); if (!b) return;
+  state.filter = b.dataset.f; document.querySelectorAll("#filters button").forEach(x => x.classList.toggle("on", x === b)); render(); };
+
+$("#loginForm").onsubmit = async e => { e.preventDefault(); token = $("#token").value.trim(); start(); };
+
+async function start() {
+  if (!token) { $("#login").classList.remove("hidden"); return; }
+  try {
+    await loadAll();
+    ls.set("vc_token", token);
+    $("#login").classList.add("hidden"); $("#app").classList.remove("hidden");
+    render();
+  } catch (err) {
+    ls.del("vc_token"); token = null;
+    $("#app").classList.add("hidden"); $("#login").classList.remove("hidden");
+    $("#loginErr").textContent = "کد ورود معتبر نیست یا اینترنت قطع است.";
+  }
+}
+start();
+</script>
+</body>
+</html>
