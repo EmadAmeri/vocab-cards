@@ -137,10 +137,11 @@ function setSync(t){ $("#sync").textContent = t; }
 
 async function audioUrl(w) {
   if (audioCache.has(w.id)) return audioCache.get(w.id);
-  const pr = gh(w.audio, {}, true).then(r => r.ok ? r.blob() : null).then(b => b && URL.createObjectURL(b));
+  const pr = gh(w.audio, {}, true).then(r => r.ok ? r.arrayBuffer() : null)
+    .then(b => b && URL.createObjectURL(new Blob([b], { type: "audio/mpeg" })));
   audioCache.set(w.id, pr); return pr;
 }
-async function play(w){ const u = await audioUrl(w); if (!u) return; player.pause(); player = new Audio(u); player.play().catch(()=>{}); }
+async function play(w){ const u = await audioUrl(w); if (!u) return; player.pause(); player.src = u; player.currentTime = 0; player.play().catch(()=>{}); }
 
 const groupCount = () => Math.ceil(words.length / SIZE);
 const groupWords = g => g === 0 ? words : words.slice((g-1)*SIZE, g*SIZE);
@@ -186,6 +187,7 @@ function render() {
     });
     grid.append(el);
   }
+  if (state.group) list.forEach(audioUrl);
 }
 
 $("#filters").onclick = e => { const b = e.target.closest("button"); if (!b) return;
